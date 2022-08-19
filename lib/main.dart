@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,15 +33,27 @@ class WebBaba extends StatefulWidget {
 }
 
 class _WebBabaState extends State<WebBaba> {
-  late WebViewController _controller;
-  final Completer<WebViewController> _controllerCompleter =
-      Completer<WebViewController>();
+  InAppWebViewController? _controller;
+  InAppWebViewGroupOptions options = InAppWebViewGroupOptions(
+      crossPlatform: InAppWebViewOptions(
+        useShouldOverrideUrlLoading: true,
+        mediaPlaybackRequiresUserGesture: false,
+      ),
+      android: AndroidInAppWebViewOptions(
+        useHybridComposition: true,
+      ),
+      ios: IOSInAppWebViewOptions(
+        allowsInlineMediaPlayback: true,
+      ));
+
+  // final Completer<InAppWebViewController> _controllerCompleter =
+  //     Completer<InAppWebViewController>();
 
   @override
   void initState() {
     super.initState();
     // Enable hybrid composition.
-    if (Platform.isAndroid) WebView.platform = SurfaceAndroidWebView();
+    // if (Platform.isAndroid) InAppWebView.platform = SurfaceAndroidWebView();
   }
 
   @override
@@ -50,12 +62,15 @@ class _WebBabaState extends State<WebBaba> {
       onWillPop: () => _goBack(context),
       child: Scaffold(
         body: SafeArea(
-          child: WebView(
-            initialUrl: 'https://dev01.ml/olaris/app',
-            javascriptMode: JavascriptMode.unrestricted,
-            onWebViewCreated: (WebViewController webViewController) {
-              _controllerCompleter.future.then((value) => _controller = value);
-              _controllerCompleter.complete(webViewController);
+          child: InAppWebView(
+            initialUrlRequest:
+                URLRequest(url: Uri.parse("https://dev01.ml/olaris/app")),
+            initialOptions: options,
+            onWebViewCreated: (InAppWebViewController webViewController) {
+              _controller = webViewController;
+
+              // _controllerCompleter.future.then((value) => _controller = value);
+              // _controllerCompleter.complete(webViewController);
             },
           ),
         ),
@@ -64,49 +79,15 @@ class _WebBabaState extends State<WebBaba> {
   }
 
   Future<bool> _goBack(BuildContext context) async {
-    if (await _controller.canGoBack()) {
-      _controller.goBack();
-      return Future.value(false);
-    } else {
-      SystemNavigator.pop();
-      return Future.value(true);
-    }
+    print(_controller);
+    _controller?.goBack();
+    return false;
+    // if (_controller?.canGoBack()) {
+    //   _controller.goBack();
+    //   return Future.value(false);
+    // } else {
+    //   SystemNavigator.pop();
+    //   return Future.value(true);
+    // }
   }
 }
-
-// class WebBaba extends StatelessWidget {
-//   const WebBaba({Key? key}) : super(key: key);
-
-//   final Completer<WebViewController> _controllerCompleter =
-//       Completer<WebViewController>();
-
-//   WebViewController _controller;
-
-//   Future<bool> _onWillPop(BuildContext context) async {
-//     if (await _controller.canGoBack()) {
-//       _controller.goBack();
-//       return Future.value(false);
-//     } else {
-//       return Future.value(true);
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return WillPopScope(
-//       onWillPop: () => _onWillPop(context),
-//       child: Scaffold(
-//         body: SafeArea(
-//           child: WebView(
-//             javascriptMode: JavascriptMode.unrestricted,
-//             initialUrl: "https://dev01.ml/olaris/app",
-//             onWebViewCreated: (WebViewController webViewController) {
-//               _controllerCompleter.future.then((value) => _controller = value);
-//               _controllerCompleter.complete(webViewController);
-//             },
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
